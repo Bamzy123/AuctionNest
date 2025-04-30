@@ -5,6 +5,8 @@ import org.babi.Dtos.Request.RegisterRequest;
 import org.babi.Dtos.Response.ApiResponse;
 import org.babi.Enums.Role;
 import org.babi.Exceptions.InvalidOperationException;
+import org.babi.Exceptions.EmailAlreadyUseException;
+import org.babi.Exceptions.InvalidUserCredentialsException;
 import org.babi.Models.User;
 import org.babi.Repositories.UserRepository;
 import org.springframework.stereotype.Service;
@@ -20,9 +22,7 @@ public class AuthService {
     }
 
     public ApiResponse register(RegisterRequest req) {
-        if (userRepository.existsByEmail(req.getEmail())) {
-            throw new InvalidOperationException("Email already in use");
-        }
+        if (userRepository.existsByEmail(req.getEmail())) throw new EmailAlreadyUseException("Email already in use");
         User user = new User();
         user.setUsername(req.getUsername());
         user.setEmail(req.getEmail());
@@ -35,12 +35,10 @@ public class AuthService {
     public ApiResponse login(LoginRequest req) {
         Optional<User> userOpt = userRepository.findByUsername(req.getUsernameOrEmail());
         if (userOpt.isEmpty() || !userOpt.get().getPassword().equals(req.getPassword())) {
-            throw new InvalidOperationException("Invalid username or password");
+            throw new InvalidUserCredentialsException("Invalid username or password");
         }
         User user = userOpt.get();
-        if (user.isBanned()) {
-            throw new InvalidOperationException("User is banned");
-        }
+        if (user.isBanned()) throw new InvalidOperationException("User is banned");
         return new ApiResponse(true, "Login successful");
     }
 }
